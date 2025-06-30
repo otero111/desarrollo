@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Preguntas - Psicología del Desarrollo</title>
+    <style>
+        /* CSS Integrado */
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .quiz-container {
+            background-color: #1e1e1e;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 800px;
+            overflow: hidden;
+            padding: 30px;
+        }
+
+        .quiz-header {
+            padding-bottom: 20px;
+        }
+
+        h2 {
+            margin: 0 0 20px 0;
+            font-size: 1.5em;
+            line-height: 1.4;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        ul li {
+            margin-bottom: 10px;
+        }
+
+        .option {
+            background-color: #333;
+            border: 2px solid #555;
+            color: #e0e0e0;
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 1em;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .option:hover:not([disabled]) {
+            background-color: #444;
+            border-color: #777;
+        }
+
+        .option:disabled {
+            cursor: not-allowed;
+        }
+
+        .correct {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+
+        .justification-container {
+            background-color: #2a2a2a;
+            border-left: 5px solid #007bff;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            display: none; /* Se muestra con JS */
+        }
+
+        #justification {
+            margin: 0;
+            font-style: italic;
+            line-height: 1.6;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            color: #bbb;
+        }
+
+        #toggle-speech {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #toggle-speech.active {
+            background-color: #28a745;
+        }
+
+        #toggle-speech:hover {
+            background-color: #0056b3;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        #prev, #next, #restart {
+            background-color: #555;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+
+        #prev:hover, #next:hover, #restart:hover {
+            background-color: #666;
+        }
+
+        .score-container {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div class="quiz-header">
+            <h2 id="question">Aquí va la pregunta</h2>
+            <div class="controls">
+                <p id="progress"></p>
+                <button id="toggle-speech">Activar Lectura</button>
+            </div>
+            <ul id="option-list">
+                <!-- Las opciones se generarán con JS -->
+            </ul>
+        </div>
+        <div class="justification-container">
+            <p id="justification"></p>
+        </div>
+        <div class="navigation-buttons">
+            <button id="prev">Anterior</button>
+            <button id="next">Siguiente</button>
+        </div>
+    </div>
+
+    <div id="score-container" class="score-container hidden">
+        <h2>Tu puntuación final es <span id="score"></span></h2>
+        <button id="restart">Volver a Intentar</button>
+    </div>
+
+    <script>
+        // JavaScript Integrado
+        document.addEventListener('DOMContentLoaded', () => {
+            const quizData = [
+                // Mis preguntas generadas (Serie 1)
+                { question: 'Según la teoría de John Bowlby, ¿cuál es la función principal del vínculo de apego?', options: ['Proveer alimento y sustento físico al niño.', 'Mantener la proximidad y proporcionar una sensación de seguridad.', 'Fomentar la independencia total desde el nacimiento.', 'Establecer jerarquías sociales entre el niño y sus cuidadores.'], correctAnswer: 1, justification: 'La teoría del apego de Bowlby postula que la función esencial del vínculo es la BÚSQUEDA DE PROXIMIDAD para obtener seguridad, no la alimentación.' },
+                { question: '¿Qué cualidad del cuidador es fundamental para promover un apego seguro en el niño?', options: ['La predictibilidad y la calidez en sus respuestas.', 'La capacidad de dejar al niño solo para que aprenda a explorar.', 'La interferencia constante para guiar al niño.', 'El rechazo a las señales de apego para fomentar la fortaleza.'], correctAnswer: 0, justification: 'El texto indica que la seguridad se promueve con consistencia, predictibilidad, flexibilidad y calidez. Se destaca la sensibilidad del cuidador para responder de forma pronta y adecuada.' },
+                { question: 'Un niño que minimiza sus señales de apego para evitar el rechazo de un cuidador que tiende a ser hostil, probablemente tiene un estilo de apego:', options: ['Seguro.', 'Inseguro Evitativo.', 'Inseguro Resistente.', 'Desorganizado.'], correctAnswer: 1, justification: 'El patrón de apego evitativo se caracteriza porque los niños "han aprendido a minimizar su señales de apego para garantizar la respuesta por parte de un cuidador hostil o que puede rechazarlo".' },
+                { question: '¿Qué son los Modelos Operativos Internos (MOI) en la teoría del apego?', options: ['Son instrucciones genéticas que determinan el comportamiento del niño.', 'Son las jerarquías que se establecen entre las diferentes figuras de apego.', 'Son representaciones mentales de las experiencias de cuidado temprano que influyen en relaciones futuras.', 'Son las conductas observables de búsqueda de proximidad, como llorar o sonreír.'], correctAnswer: 2, justification: 'Los MOI son "representaciones de las experiencias de cuidado temprano que la persona tuvo" y que se convierten en "representaciones sobre el apego que la persona tenderá a manifestar en distintos contextos".' },
+                { question: 'En la teoría de Winnicott, ¿a qué se refiere el concepto de "dependencia relativa"?', options: ['Al estado inicial en que el niño depende por completo de la madre sin ser consciente de ello.', 'Al momento en que el niño se independiza y forma identificaciones complejas con la sociedad.', 'Al momento en que el bebé comienza a ser consciente de su dependencia y puede sentir angustia ante la lejanía de la madre.', 'A la capacidad del niño de rechazar al cuidador para afirmar su autonomía.'], correctAnswer: 2, justification: 'La "dependencia relativa" es la fase en que "el bebé comienza a hacer consciente de su dependencia". La opción A describe la "dependencia absoluta".' },
+                { question: 'Un adolescente que ha decidido estudiar medicina porque toda su familia son médicos, sin haber considerado otras opciones, se encuentra en el estatus de identidad conocido como:', options: ['Identidad Difusa.', 'La hipoteca de la identidad.', 'La moratoria de la identidad.', 'Logro de la identidad.'], correctAnswer: 1, justification: 'La hipoteca de la identidad se define como el estado en que los adolescentes "han asumido compromisos impuestos, generalmente por sus padres, sin haber explorado alternativas de forma autónoma".' },
+                { question: '¿Cuál de las siguientes opciones describe mejor los componentes centrales del modelo de Miyake sobre las Funciones Ejecutivas (FE)?', options: ['Atención, emoción y conducta.', 'Memoria de trabajo, control inhibitorio y flexibilidad cognitiva.', 'FE "frías" y FE "calientes".', 'Regulación extrínseca y regulación intrínseca.'], correctAnswer: 1, justification: 'El modelo de Miyake identifica tres habilidades centrales e independientes del contexto: la memoria de trabajo, la flexibilidad cognitiva y el control inhibitorio.' },
+                { question: 'Según el modelo de James Gross, cambiar la manera de pensar sobre una situación para modificar la respuesta emocional que provoca, se conoce como:', options: ['Selección de la situación.', 'Modificación de la situación.', 'Reevaluación cognitiva.', 'Modulación emocional.'], correctAnswer: 2, justification: 'El texto define la "Reevaluación cognitiva" como la estrategia que implica "cambiar la valoración de la situación para modificar la respuesta emocional".' },
+                { question: 'Según la teoría de Vygotsky, ¿cuál es la función principal del habla privada o lenguaje egocéntrico?', options: ['Comunicarse socialmente con los pares de manera simplificada.', 'Es un error en el desarrollo que debe corregirse de inmediato.', 'Funcionar como una herramienta para la autorregulación y la planificación de la acción.', 'Expresar emociones que no pueden ser verbalizadas de otra manera.'], correctAnswer: 2, justification: 'Vygotsky consideraba el habla privada como "fundamental en el desarrollo cognitivo, ya que ayuda a regular la actividad mental" y a planificar la acción.' },
+                { question: 'En la teoría de Piaget, ¿qué es la "asimilación"?', options: ['La modificación de los esquemas mentales para ajustarse a nueva información.', 'El estado de equilibrio entre las capacidades del niño y las demandas del entorno.', 'La incorporación de nueva información en las estructuras o esquemas mentales ya existentes.', 'Las acciones reflejas del recién nacido.'], correctAnswer: 2, justification: 'La asimilación es el proceso de "incorporación" de "elementos nuevos a estructuras ya construidas". Por el contrario, la modificación de esquemas es la acomodación.' },
+                { question: '¿Cuál es una característica central del pensamiento en el estadio de las Operaciones Concretas (7-12 años) según Piaget?', options: ['El pensamiento es egocéntrico e irreversible.', 'La capacidad de razonar sobre hipótesis y posibilidades abstractas.', 'Las acciones interiorizadas se vuelven reversibles y se organizan en sistemas lógicos aplicados a objetos concretos.', 'La inteligencia se basa exclusivamente en percepciones y acciones motoras.'], correctAnswer: 2, justification: 'En este estadio, "las acciones interiorizadas adquieren carácter de operaciones en tanto que transformaciones reversibles" aplicadas a objetos concretos.' },
+                { question: 'La teoría de la especificidad de dominio argumenta que la mente:', options: ['Opera con un conjunto general de capacidades de razonamiento aplicables a cualquier tarea.', 'Es un conjunto de subsistemas o módulos especializados para manejar información específica (ej. lenguaje, física, etc.).', 'Se desarrolla de forma idéntica en todas las culturas.', 'Es una "pizarra en blanco" que se llena completamente con la experiencia.'], correctAnswer: 1, justification: 'Esta teoría propone que "gran parte de la cognicion humana es dominio-especifica" y que la mente es un "conjunto de subsistemas persistentes e independientes diseñados para desempeñar tareas delimitadas".' },
+
+                // Preguntas de las imágenes del parcial
+                { question: "Estamos registrando cómo es el apego de los niños de dos años. Uno de nuestros registros dice: \"están papá y Juana jugando... Al papá le suena el teléfono, se pone de pie y se aleja... la niña señala la salida y dice 'papá ven'... se acerca a él, lo sigue y se abraza de su pierna\". Lo que hace Juana da cuenta de uno de los tipos de conducta de apego, denominada por Ainsworth como:", options: ['huida por temor a los extraños.', 'ansiosas ambivalentes.', 'exploratorias.', 'de búsqueda de proximidad.'], correctAnswer: 3, justification: 'El comportamiento de Juana (señalar, seguir, abrazar) es un claro ejemplo de conductas que buscan mantener la cercanía con la figura de apego ante la separación. Esto se define como búsqueda de proximidad.' },
+                { question: 'Según Carbonell y Ortiz, las características de un cuidado capaz de promover un apego seguro son:', options: ['autocontrol, consistencia, flexibilidad y calidez.', 'control infantil y flexibilidad cognitiva.', 'persistencia, disponibilidad y puesta de límites.', 'autonomía progresiva, participación infantil y respeto a las infancias.'], correctAnswer: 0, justification: 'El documento del módulo 6 indica explícitamente que para promover la seguridad, las figuras de apego necesitan: Autocontrol, Consistencia, Predictibilidad, Flexibilidad y Calidez.' },
+                { question: 'Según Winnicott, durante el periodo de la dependencia absoluta la madre atraviesa un estado caracterizado por la entrega total y la identificación con su bebé. Se denomina a este estado como:', options: ['estado de alerta.', 'dependencia relativa de la madre.', 'preocupación materna primaria.', 'situación material ambivalente.'], correctAnswer: 2, justification: 'Winnicott define este estado especial de la madre, de entrega total y fuerte identificación con el bebé, como "preocupación materna primaria".' },
+                { question: 'De acuerdo con Santrock, la moratoria de identidad hace referencia a la situación de los adolescentes que:', options: ['tienen compromisos definidos pero no experimentan una situación de crisis.', 'no experimentan crisis ni tienen compromisos definidos.', 'experimentan al mismo tiempo una fuerte sensación de crisis y un perfil de compromisos bien definidos.', 'experimentan una situación de crisis y no tienen compromisos claramente definidos.'], correctAnswer: 3, justification: 'La moratoria de identidad se define como el estatus de los "adolescentes que se encuentran en medio de una crisis, pero cuyos compromisos aún no existen o están vagamente definidos". Es un período de exploración activa sin una decisión final.' },
+                { question: 'Carrillo y col. plantean como conclusión de su estudio sobre las percepciones paternas acerca de la crianza de los hijos que:', options: ['se mantienen percepciones tradicionales sobre los roles materno y paterno sin posibilidad de cambios.', 'hay cambios y percepciones innovadoras sobre los roles materno y paterno, sin indicadores de creencias tradicionales.', 'los padres tienen algunas creencias tradicionales sobre los roles pero están incorporando percepciones innovadoras acerca de su participación en el cuidado.', 'no se identificó un patrón consistente de percepciones paternas en relación a la crianza.'], correctAnswer: 2, justification: 'La conclusión del estudio de Carrillo et al. es que, si bien los padres "mantienen creencias tradicionales sobre los roles parentales, también están adoptando percepciones más innovadoras respecto a la participación de ambos padres en el cuidado infantil".' },
+                { question: 'De acuerdo con el modelo de Miyake descrito en Delgado y Nin, la habilidad que permite mantener activa y manipular información de forma consciente en la mente se denomina:', options: ['flexibilidad cognitiva.', 'memoria de trabajo.', 'control inhibitorio.', 'inteligencia cristalizada.'], correctAnswer: 1, justification: 'El modelo de Miyake, según se describe en el texto, define la memoria de trabajo como la "capacidad de mantener informacion activa en la memoria y manipularla".' },
+                { question: 'En relación al concepto de plasticidad relativa, McClelland et al. plantean que:', options: ['el potencial de cambio es limitado gracias a la influencia del ambiente.', 'si bien hay un potencial de cambio, no es ilimitado y puede variar a lo largo de la vida.', 'es difícil que se de en la adolescencia ya que a nivel cerebral hay un desarrollo completo.', 'es la característica principal de los últimos períodos del ciclo vital.'], correctAnswer: 1, justification: 'El concepto de "plasticidad relativa" implica precisamente eso: la capacidad de cambio existe, pero no es infinita. El texto especifica que "el potencial de cambio no es ilimitado y el grado de plasticidad puede variar a lo largo de la vida".' },
+                { question: 'McCoy plantea el tema de la medición de las funciones ejecutivas. Una de las ventajas que tienen los cuestionarios de reporte del adulto es que son:', options: ['poco susceptibles a la deseabilidad social.', 'poco escalables.', 'objetivos.', 'económicos y sólo requieren tiempo para completarlos.'], correctAnswer: 3, justification: 'El texto de McCoy destaca entre las ventajas de los informes para adultos su "costo-efectividad" y que "suelen tomar entre 5 y 15 minutos" para ser completados.' },
+                { question: 'Trommsdorff propone que los distintos modelos culturales impactan sobre las prácticas de regulación. Acerca del modelo interdependiente podemos decir que:', options: ['es característico de culturas occidentales.', 'enfatiza la agencia individual.', 'se basa en metas relacionales (por ejemplo, honrar a los padres).', 'el éxito se atribuye al talento y la habilidad del sujeto.'], correctAnswer: 2, justification: 'El modelo interdependiente se enfoca en "ajustar los propios objetivos a los de los demás", promoviendo la "conexión social y la armonía interpersonal" y la agencia compartida con el grupo.' },
+                { question: 'Según Geldhof y col., las capacidades cognitivas fluidas:', options: ['alcanzan su punto máximo alrededor de los 20 años y tienen una disminución gradual hacia la vejez.', 'aparecen por primera vez en la adultez fortaleciéndose en la entrada de la vejez.', 'aparecen como respuesta al deterioro cognitivo.', 'alcanzan su punto máximo en la adolescencia temprana desapareciendo en la entrada a la adultez.'], correctAnswer: 0, justification: 'El texto indica consistentemente que "Las habilidades cognitivas fluidas alcanzan su punto máximo en la mitad de los 20 años y experimentan un descenso gradual hacia la vejez".' },
+                { question: 'Según Alarcón-Rubio et. al., los hallazgos sobre el uso del habla privada son consistentes con lo propuesto por Vygotski porque dan cuenta de que:', options: ['los procesos psicológicos superiores están mediados por el habla.', 'el uso del lenguaje egocéntrico es independiente de la dificultad de la tarea.', 'el lenguaje primero es interno y luego externo.', 'el pensamiento y la resolución de problemas tienen una predisposición innata.'], correctAnswer: 0, justification: 'Vygotsky postula que el lenguaje es la herramienta cultural que media la cognición. El uso del habla privada para regular la conducta al resolver problemas es la manifestación directa de esta mediación de los procesos psicológicos superiores.' },
+                { question: 'El concepto de dialecto en el texto de Borzone y Rosemberg hace referencia a:', options: ['una forma de habla que se aparta de las formas correctas de uso del lenguaje.', 'una forma de habla común a un grupo, en cierta región y con características propias.', 'lo que tienen en común todas las formas de empleo de una lengua.', 'la gramática de una lengua.'], correctAnswer: 1, justification: 'Desde la sociolingüística, un dialecto es una variedad lingüística propia de un grupo o región, y el texto enfatiza que se debe "reconocer que cada dialecto y variedad del lenguaje tiene su propio valor".' },
+                { question: 'Vygotski sostiene que el cambio en la perspectiva sobre el desarrollo infantil lleva a un cambio en la concepción de la educación. Este cambio implica:', options: ['identificar las capacidades naturales ya desarrolladas para ajustar la enseñanza a ellas.', 'identificar las transformaciones que la propia vida cultural genera en el desarrollo.', 'considerar al desarrollo cultural como un derivado directo de la maduración orgánica.', 'reconocer que la influencia cultural requiere para concretarse un organismo sano.'], correctAnswer: 1, justification: 'Vygotsky critica la idea de que la educación debe adaptarse pasivamente al desarrollo. Propone que la asimilación de la cultura (lenguaje, aritmética) "transforman las funciones naturales". La educación es un proceso activo que genera profundas transformaciones.' },
+                { question: 'Piaget plantea en relación al orden de aparición de los estadios que:', options: ['depende de las influencias culturales en juego.', 'implica una sucesión constante si bien puede haber variaciones cronológicas determinadas por la experiencia anterior y la maduración.', 'hay una clara dependencia de la etnia.', 'en algunas culturas solo puede aparecer el primer estadio.'], correctAnswer: 1, justification: 'Uno de los criterios de Piaget para los estadios es la "Sucesión constante de conductas". El orden es siempre el mismo, aunque la edad de aparición (cronología) puede variar por factores como la experiencia y maduración.' },
+                { question: 'En el Protocolo 2, la conducta de Juana de seguir a su padre y abrazarlo mientras habla por teléfono, es una conducta de:', options: ['huida por temor a los extraños', 'ansiosas ambivalentes', 'exploratorias', 'de búsqueda de proximidad'], correctAnswer: 3, justification: 'La acción de Juana de buscar activamente el contacto físico con su padre cuando este se aleja es un ejemplo clásico de una conducta de búsqueda de proximidad, activada por la separación de su figura de apego.' },
+                { question: 'La adecuación que hace la figura de apego de su comportamiento al comportamiento del niño/a es:', options: ['la regulación emocional del cuidador', 'el establecimiento de patrones y rutinas por parte del cuidador', 'la cercanía física y el afecto', 'una característica no mencionada'], correctAnswer: 0, justification: 'La capacidad de la figura de apego para adecuar su respuesta a las señales del niño se relaciona directamente con su propia regulación emocional, que le permite ser sensible, consistente y cálido, en lugar de reaccionar impulsivamente.' },
+                { question: 'En el Protocolo 1, la pregunta 2 (sobre las características de un cuidado seguro según Carbonell y Ortiz) se refiere a:', options: ['autocontrol, consistencia, flexibilidad y calidez', 'control infantil y flexibilidad cognitiva', 'persistencia, disponibilidad y puesta de límites', 'autonomía progresiva, participación infantil y respeto'], correctAnswer: 0, justification: 'Según el texto, Carbonell y Ortiz (basándose en Ainsworth) destacan que la promoción de un apego seguro requiere que los cuidadores demuestren autocontrol, consistencia, predictibilidad, flexibilidad y calidez en sus respuestas.' },
+                { question: 'Según Winnicott, el período de dependencia absoluta consiste en:', options: ['un estado de vulnerabilidad por el que pasan bebés prematuros', 'un estado en el que el bebé requiere de la madre para satisfacer las necesidades instintivas del yo', 'el intento de la madre por darle independencia al bebé pero la negativa de éste por aceptarla', 'desadaptaciones graduadas de la madre hacia el bebé'], correctAnswer: 1, justification: 'La dependencia absoluta se define como la etapa inicial en la que el niño depende por completo de la provisión de la madre para la continuidad de su existencia y la satisfacción de sus necesidades más básicas, sin ser consciente de ello.' },
+                { question: 'En su modelo de funciones ejecutivas, Doebel presenta:', options: ['una perspectiva estructural con tres funciones básicas: inhibición, inteligencia y memoria de trabajo', 'una perspectiva no mencionada en los textos', 'una perspectiva que critica los modelos de componentes', 'una perspectiva que integra la motivación'], correctAnswer: 2, justification: 'Doebel presenta una visión alternativa que critica el enfoque de componentes (como el de Miyake), argumentando que la función ejecutiva no es solo la maduración de procesos generales, sino la habilidad de usar el control en función de objetivos, creencias y conocimientos específicos del contexto.' },
+                { question: 'Al analizar la adquisición de la fonología, Borzone y Rosemberg sostienen que los niños:', options: ['adquieren los fonemas uno a uno, de los más simples a los más complejos.', 'toman conciencia progresivamente de los fonemas por diferenciación a partir de unidades mayores.', 'siguen un orden fijo de adquisición.', 'aprenden antes aquellos fonemas en que reciben más correcciones de pronunciación por parte de los adultos.'], correctAnswer: 1, justification: 'El desarrollo fonológico no es la suma de fonemas aislados, sino un proceso de diferenciación. Los niños parten de una representación global de la palabra (unidad mayor) y progresivamente van diferenciando y tomando conciencia de los sonidos (fonemas) que la componen.' },
+                { question: 'Hirschfeld y Gelman plantean que la investigación reciente en psicología ha cuestionado la idea de que los seres humanos:', options: ['disponen de capacidades especializadas para manejar informaciones específicas.', 'sean inherentemente sociales como proponía la teoría vygotskiana.', 'están dotados de capacidades generales que se aplican a cualquier problema.'], correctAnswer: 2, justification: 'La teoría de la especificidad de dominio, defendida por autores como Hirschfeld y Gelman, cuestiona directamente la visión clásica (dominio-general) de que la mente opera con un conjunto único de capacidades de razonamiento. Proponen, en cambio, que la mente es modular y tiene capacidades especializadas.' },
+                { question: 'En el texto de Moreira se afirma sobre el desarrollo cultural que:', options: ['hay evidencia acerca de que los niños con desarrollo típico, sin importar la cultura, se identifican con otras personas, saben que otras personas tienen intenciones, etc.', 'los niños de familias migrantes aprenden observando a otros.', 'solo las culturas dominantes, occidentales y no indígenas pueden identificar las intenciones que tapizan las acciones y comprender las relaciones causales entre objetos físicos y acontecimientos.', 'las culturas orientales han logrado sacar conclusiones universales sobre todas las realidades sociales.'], correctAnswer: 0, justification: 'Moreira señala que, a pesar de las diferencias culturales, hay una base biológica común. Los niños, independientemente de su cultura, "desarrollan habilidades para identificarse con otros, entender intenciones, participar en atención conjunta, y aprender mediante la observación e imitación".' },
+                { question: '¿De acuerdo con Piaget la noción de objeto en el recién nacido:', options: ['marca la diferencia entre el pensamiento del niño y el pensamiento científico.', 'se obtiene por la acumulación de información recibida externamente.', 'depende de estructuras innatas como el grupo de los desplazamientos.', 'no existe.'], correctAnswer: 3, justification: 'Para Piaget, en el inicio del estadio sensoriomotor, el recién nacido vive en un estado de "adualismo" o egocentrismo radical. No hay una diferenciación entre el yo y el mundo, por lo tanto, no existe la noción de un objeto permanente e independiente de su propia acción y percepción.' },
+                
+                // Preguntas del texto del usuario
+                { question: '¿Cuál es el objeto de estudio principal de la Psicología Evolutiva?', options: ['Las diferencias de personalidad entre los individuos.', 'Los procesos de cambio psicológico que ocurren en las personas a lo largo de toda su vida.', 'Las conductas y características esperadas para cada grupo de edad.', 'La influencia de la herencia genética con exclusión de factores ambientales.'], correctAnswer: 1, justification: 'La Psicología Evolutiva se define por su interés en los procesos de cambio psicológico que ocurren en las personas desde la concepción hasta la muerte, abarcando todo el ciclo vital.' },
+                { question: 'En el modelo ecológico de Urie Bronfenbrenner, ¿qué representa el "Exosistema"?', options: ['El entorno más inmediato donde la persona interactúa cara a cara.', 'Las interrelaciones entre dos o más entornos.', 'Escenarios donde la persona no participa directamente, pero que la afectan.', 'El contexto cultural más amplio, como las leyes y la ideología.'], correctAnswer: 2, justification: 'El Exosistema se refiere a contextos que influyen indirectamente en el desarrollo del individuo. La persona no está presente en ellos, pero las decisiones que se toman allí (como el trabajo de los padres) tienen un impacto en su vida.' },
+                { question: 'Según la teoría sociocultural de Lev Vygotsky, ¿cuál es el origen de las funciones psicológicas superiores?', options: ['Tienen un origen individual y solo después se socializan.', 'Son producto de un proceso de maduración biológica predeterminado.', 'Surgen de la asociación de estímulos y respuestas.', 'Tienen un origen social y se internalizan a través de la interacción.'], correctAnswer: 3, justification: 'La "ley de la doble formación" de Vygotsky es central: todo proceso mental superior aparece primero en el plano social (interpsicológico) y luego se internaliza en el plano individual (intrapsicológico).' },
+                { question: 'El Enfoque de Sistemas de Desarrollo Relacionales (RDS) rechaza las divisiones cartesianas. ¿Qué significa esto?', options: ['Estudiar al individuo y su contexto como entidades separadas.', 'Explicar el desarrollo solo por la biología o solo por el ambiente.', 'Que individuo y contexto están fusionados en una relación bidireccional.', 'Que el método experimental es la única forma válida de estudio.'], correctAnswer: 2, justification: 'El paradigma RDS se opone a las divisiones (naturaleza vs. crianza, mente vs. cuerpo). Su unidad de análisis es la relación de influencia mutua e inseparable entre el individuo y su contexto.' },
+                { question: '¿Qué caracteriza, según Vygotsky, a los períodos de "crisis" en el desarrollo infantil?', options: ['Son períodos de estancamiento.', 'Son períodos puramente negativos y destructivos.', 'Son períodos de transición con conflictos, donde lo negativo esconde cambios positivos.', 'Son períodos tranquilos de acumulación gradual.'], correctAnswer: 2, justification: 'Para Vygotsky, las crisis son momentos revolucionarios. La conducta conflictiva es solo la "faceta inversa o velada de los cambios positivos de la personalidad". Lo esencial de la crisis es la aparición de algo nuevo.' },
+                { question: 'El concepto de "adultez emergente" propuesto por Jeffrey Arnett se refiere a:', options: ['Una etapa universal entre los 18 y 25 años.', 'Un período de transición caracterizado por la exploración y la inestabilidad.', 'El final de la adolescencia con asunción inmediata de roles adultos.', 'Un trastorno del desarrollo que impide la madurez.'], correctAnswer: 1, justification: 'La adultez emergente (18-25 años) se describe como un período de transición en sociedades industrializadas, no universal. Se define por la exploración de la identidad, inestabilidad, y sentirse "en el medio" entre la adolescencia y la adultez plena.' },
+                { question: '¿Cuál es la principal diferencia entre un diseño de investigación longitudinal y uno transversal?', options: ['El longitudinal usa experimentos y el transversal solo observación.', 'El longitudinal estudia a los mismos individuos a lo largo del tiempo, mientras que el transversal compara diferentes grupos en un solo momento.', 'El longitudinal es más rápido y económico.', 'El transversal establece causalidad y el longitudinal no.'], correctAnswer: 1, justification: 'La diferencia fundamental reside en el tratamiento del tiempo: el diseño longitudinal sigue a una misma cohorte a través de los años, mientras que el transversal compara a diferentes cohortes en un único punto temporal.' },
+                { question: 'Según Juan Carlos Carrasco y su enfoque "crítico-alternativo", ¿cómo se debe concebir al sujeto?', options: ['Como un ser abstracto con leyes universales.', 'Como un "ser en situación", inseparable de su contexto histórico y social.', 'Como un organismo pasivo moldeado por la economía.', 'Como un individuo cuya psicología es independiente de lo social.'], correctAnswer: 1, justification: 'El enfoque de Carrasco concibe al sujeto como "ser en situación", lo que significa que la persona es inseparable del contexto (lugar, tiempo, acontecimientos) en el que vive, exigiendo un análisis de la influencia social en lo psíquico.' },
+                { question: 'El paradigma de la "Protección Integral de los Derechos del Niño", en contraposición al del "Disciplinamiento", implica que el adulto:', options: ['Detenta el poder absoluto y usa el control y la violencia.', 'Considera al niño como un "bárbaro etario".', 'Acompaña, dialoga, respeta y garantiza los derechos del niño.', 'Ignora las necesidades del niño.'], correctAnswer: 2, justification: 'El paradigma de Protección Integral define el rol del adulto como alguien que acompaña, supervisa, dialoga y garantiza derechos, reconociendo al niño como sujeto activo con autonomía progresiva, sin lugar para la violencia.' },
+                { question: 'La teoría de los sistemas dinámicos, aplicada al desarrollo motor, sostiene que:', options: ['Las habilidades motoras surgen de manera automática y fija.', 'El desarrollo motor es un proceso rígido y universal.', 'El desarrollo motor implica la organización de múltiples habilidades para adaptarse a tareas específicas.', 'El desarrollo motor es independiente de la percepción y la acción.'], correctAnswer: 2, justification: 'Esta teoría postula que el desarrollo motriz no es un programa genético rígido, sino la auto-organización de múltiples componentes (cuerpo, entorno, tarea) que se reorganizan para lograr un objetivo, como caminar.' },
+                
+                // Nuevas preguntas agregadas para llegar a 50
+                { question: 'El famoso experimento de Harlow con monos demostró que para el apego es más importante:', options: ['La fuente de alimento (madre de alambre con biberón).', 'El contacto confortable y la seguridad (madre de felpa).', 'La estimulación visual sin contacto.', 'La presencia de otros monos de la misma edad.'], correctAnswer: 1, justification: 'El experimento de Harlow fue crucial para demostrar que el apego no se basa en la alimentación, sino en la necesidad de seguridad y confort. Los monos preferían la "madre" de felpa suave, aunque no proveyera alimento, sobre la de alambre que sí lo hacía.' },
+                { question: 'El "Duelo por los padres de la infancia" en la adolescencia implica principalmente:', options: ['El miedo a la muerte de los padres.', 'La desidealización de los padres, reconociéndolos como seres falibles.', 'El deseo de cortar toda relación con los padres.', 'La tristeza por el envejecimiento de los padres.'], correctAnswer: 1, justification: 'Este duelo se refiere al proceso psicológico por el cual el adolescente debe renunciar a la imagen idealizada y omnipotente que tenía de sus padres durante la niñez, lo que le permite relacionarse con ellos de una forma más madura y realista.' },
+                { question: '¿Qué relación se ha encontrado entre la autorregulación y el desempeño académico?', options: ['No existe una correlación demostrada entre ambas.', 'Una baja autorregulación se asocia con un mejor desempeño académico.', 'Una mayor autorregulación se asocia consistentemente con un mejor desempeño académico.', 'La autorregulación solo influye en el desempeño social, no en el académico.'], correctAnswer: 2, justification: 'El texto indica que "Existen asociaciones entre niños, adolescentes y adultos con mayor autorregulacion y mejor desempeño academico", y que su desempeño en educación inicial predice el éxito posterior.' },
+                { question: 'En el desarrollo sintáctico, ¿qué son las "holofrases"?', options: ['Combinaciones de dos palabras con sentido completo.', 'Oraciones complejas que usan nexos y conectivos.', 'Emisiones de una única palabra que funcionan como una oración completa.', 'Errores gramaticales comunes en la infancia temprana.'], correctAnswer: 2, justification: 'La etapa de las holofrases se define como "la fase en la que el niño realiza emisiones de una única palabra" que tienen el valor funcional de una frase u oración completa (ej. "agua" para pedir agua).' },
+                { question: 'Una característica clave del pensamiento en el estadio preoperatorio de Piaget es el "egocentrismo", que se refiere a:', options: ['La tendencia del niño a ser egoísta y no compartir sus juguetes.', 'La incapacidad de distinguir la propia perspectiva de la de los demás.', 'La capacidad de entender múltiples puntos de vista a la vez.', 'El interés exclusivo en sí mismo, ignorando el entorno.'], correctAnswer: 1, justification: 'El egocentrismo preoperatorio no es un rasgo moral, sino cognitivo. Se refiere a que el niño "piensa que lo que el ve es lo que todos ven, y lo que el piensa es lo que todos piensan", mostrando una incapacidad para adoptar la perspectiva de otro.' }
+            ];
+
+            const questionEl = document.getElementById('question');
+            const optionListEl = document.getElementById('option-list');
+            const justificationEl = document.getElementById('justification');
+            const justificationContainer = document.querySelector('.justification-container');
+            const nextBtn = document.getElementById('next');
+            const prevBtn = document.getElementById('prev');
+            const quizContainer = document.querySelector('.quiz-container');
+            const scoreContainer = document.getElementById('score-container');
+            const scoreEl = document.getElementById('score');
+            const restartBtn = document.getElementById('restart');
+            const progressEl = document.getElementById('progress');
+            const toggleSpeechBtn = document.getElementById('toggle-speech');
+            
+            let currentQuiz = 0;
+            let score = 0;
+            let userAnswers = new Array(quizData.length).fill(null);
+            let speechEnabled = false;
+            let synth = window.speechSynthesis;
+
+            function loadQuiz() {
+                deselectAnswers();
+                justificationContainer.style.display = 'none';
+
+                if (currentQuiz < quizData.length) {
+                    const currentQuizData = quizData[currentQuiz];
+                    questionEl.innerText = currentQuizData.question;
+                    optionListEl.innerHTML = '';
+                    currentQuizData.options.forEach((option, index) => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<button class="option" data-index="${index}">${option}</button>`;
+                        optionListEl.appendChild(li);
+                    });
+                    progressEl.innerText = `Pregunta ${currentQuiz + 1} de ${quizData.length}`;
+                    
+                    if (speechEnabled) {
+                        speakQuestion();
+                    }
+
+                    if (userAnswers[currentQuiz] !== null) {
+                        showPreviousAnswer();
+                    }
+                }
+            }
+
+            function speak(text) {
+                if (synth.speaking) {
+                    synth.cancel();
+                }
+                if (speechEnabled) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'es-ES';
+                    synth.speak(utterance);
+                }
+            }
+
+            function speakQuestion() {
+                const currentQuizData = quizData[currentQuiz];
+                let textToSpeak = `Pregunta ${currentQuiz + 1}. ${currentQuizData.question}. Opciones: `;
+                currentQuizData.options.forEach((option, index) => {
+                    // Crea una etiqueta más natural para la lectura
+                    let label = String.fromCharCode(97 + index); // a, b, c, d
+                    textToSpeak += `Opción ${label}: ${option}. `;
+                });
+                speak(textToSpeak);
+            }
+            
+            function deselectAnswers() {
+                const options = document.querySelectorAll('.option');
+                options.forEach(option => {
+                    option.classList.remove('correct', 'incorrect');
+                    option.disabled = false;
+                });
+            }
+
+            function showPreviousAnswer() {
+                const { selectedIndex, isCorrect } = userAnswers[currentQuiz];
+                const options = document.querySelectorAll('.option');
+                const correctIndex = quizData[currentQuiz].correctAnswer;
+
+                options.forEach((option, index) => {
+                    if (index === correctIndex) {
+                        option.classList.add('correct');
+                    }
+                    if (index === selectedIndex && !isCorrect) {
+                        option.classList.add('incorrect');
+                    }
+                    option.disabled = true;
+                });
+
+                justificationEl.innerText = `Justificación: ${quizData[currentQuiz].justification}`;
+                justificationContainer.style.display = 'block';
+            }
+
+
+            optionListEl.addEventListener('click', (e) => {
+                if (e.target.classList.contains('option') && userAnswers[currentQuiz] === null) {
+                    const selectedOption = e.target;
+                    const selectedIndex = parseInt(selectedOption.dataset.index);
+                    const correctIndex = quizData[currentQuiz].correctAnswer;
+                    const isCorrect = selectedIndex === correctIndex;
+
+                    if (isCorrect) {
+                        score++;
+                        selectedOption.classList.add('correct');
+                    } else {
+                        selectedOption.classList.add('incorrect');
+                        optionListEl.querySelector(`[data-index='${correctIndex}']`).classList.add('correct');
+                    }
+                    
+                    userAnswers[currentQuiz] = { selectedIndex, isCorrect };
+
+                    document.querySelectorAll('.option').forEach(btn => btn.disabled = true);
+                    
+                    const justificationText = `Justificación: ${quizData[currentQuiz].justification}`;
+                    justificationEl.innerText = justificationText;
+                    justificationContainer.style.display = 'block';
+                    if (speechEnabled) {
+                        let resultText = isCorrect ? 'Correcto. ' : 'Incorrecto. ';
+                        speak(resultText + justificationText);
+                    }
+                }
+            });
+
+            nextBtn.addEventListener('click', () => {
+                if (userAnswers[currentQuiz] === null) return; // No avanzar si no se ha respondido
+                currentQuiz++;
+                if (currentQuiz < quizData.length) {
+                    loadQuiz();
+                } else {
+                    quizContainer.classList.add('hidden');
+                    scoreContainer.classList.remove('hidden');
+                    scoreEl.innerText = `${score} de ${quizData.length}`;
+                    const finalText = `Juego terminado. Tu puntuación final es ${score} de ${quizData.length}.`;
+                    if (speechEnabled) {
+                        speak(finalText);
+                    }
+                }
+            });
+
+            prevBtn.addEventListener('click', () => {
+                if (currentQuiz > 0) {
+                    currentQuiz--;
+                    loadQuiz();
+                }
+            });
+
+            restartBtn.addEventListener('click', () => {
+                currentQuiz = 0;
+                score = 0;
+                userAnswers.fill(null);
+                scoreContainer.classList.add('hidden');
+                quizContainer.classList.remove('hidden');
+                loadQuiz();
+            });
+
+            toggleSpeechBtn.addEventListener('click', () => {
+                speechEnabled = !speechEnabled;
+                toggleSpeechBtn.textContent = speechEnabled ? 'Desactivar Lectura' : 'Activar Lectura';
+                toggleSpeechBtn.classList.toggle('active', speechEnabled);
+                if (!speechEnabled) {
+                    synth.cancel();
+                }
+            });
+
+            loadQuiz();
+        });
+    </script>
+</body>
+</html>
